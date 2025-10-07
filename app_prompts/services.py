@@ -63,6 +63,8 @@ def generate_response(prompt_text: str) -> str:
     Returns:
         A simulated response string
     """
+    logger.info(f"Generating LLM response for prompt (length={len(prompt_text)} chars)")
+    
     # Simulate different response types based on prompt content
     prompt_lower = prompt_text.lower()
     
@@ -90,6 +92,8 @@ def get_embedding(text: str) -> List[float]:
     Returns:
         A list of 384 float values representing the embedding
     """
+    logger.info(f"Computing embedding vector (dimension={EMBEDDING_DIMENSION}) for text (length={len(text)} chars)")
+    
     # Use multiple hash functions to generate diverse vector components
     embedding = []
     
@@ -164,6 +168,8 @@ def find_similar(embedding: List[float], top_k: int = 5) -> List[Tuple[int, floa
     # Limit top_k to available entries
     k = min(top_k, index.ntotal)
     
+    logger.info(f"Performing FAISS similarity search (top_k={k}, index_size={index.ntotal})")
+    
     embedding_array = np.array([embedding], dtype=np.float32)
     distances, indices = index.search(embedding_array, k)
     
@@ -174,7 +180,7 @@ def find_similar(embedding: List[float], top_k: int = 5) -> List[Tuple[int, floa
             prompt_id = _prompt_id_map[idx]
             results.append((prompt_id, float(distance)))
     
-    logger.info(f"Found {len(results)} similar prompts")
+    logger.info(f"FAISS search completed, found {len(results)} similar prompts")
     return results
 
 

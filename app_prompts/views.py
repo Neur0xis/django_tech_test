@@ -54,9 +54,11 @@ class PromptViewSet(viewsets.ModelViewSet):
         websocket = serializer.validated_data.get('websocket', False)
 
         # Generate response using service layer
+        logger.info(f"Generating response for user={request.user.username}, prompt_length={len(prompt_text)}")
         response_text = services.generate_response(prompt_text)
 
         # Compute embedding
+        logger.info(f"Computing embedding for user={request.user.username}")
         embedding = services.get_embedding(prompt_text)
 
         # Save to database
@@ -102,6 +104,8 @@ class PromptViewSet(viewsets.ModelViewSet):
         Query parameter: prompt (required)
         Returns: List of similar prompts with similarity scores
         """
+        logger.info(f"Similarity search request received from user={request.user.username}")
+        
         prompt_query = request.query_params.get('prompt', None)
 
         if not prompt_query:
@@ -117,9 +121,11 @@ class PromptViewSet(viewsets.ModelViewSet):
             )
 
         # Compute embedding for the query
+        logger.info(f"Computing query embedding for similarity search, user={request.user.username}")
         query_embedding = services.get_embedding(prompt_query)
 
         # Find similar prompts (returns list of (prompt_id, distance) tuples)
+        logger.info(f"Searching FAISS index for similar prompts, user={request.user.username}")
         similar_results = services.find_similar(query_embedding, top_k=5)
 
         if not similar_results:

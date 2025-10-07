@@ -53,7 +53,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware'
+    'django.middleware.common.CommonMiddleware',
+    'app.middleware.RequestLoggingMiddleware',
 ]
 
 REST_FRAMEWORK = {
@@ -195,12 +196,22 @@ LOGGING = {
         },
     },
     'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
         'app_prompts': {
             'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
-        'django': {
+        'services': {
             'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
@@ -211,3 +222,36 @@ LOGGING = {
         'level': 'INFO',
     },
 }
+
+# Production Logging and Monitoring Integration Notes:
+# 
+# AWS CloudWatch Integration:
+# To ship logs to AWS CloudWatch in production, install watchtower:
+#   pip install watchtower
+# Then add a CloudWatch handler to LOGGING['handlers']:
+#   'cloudwatch': {
+#       'class': 'watchtower.CloudWatchLogHandler',
+#       'boto3_client': boto3.client('logs', region_name='us-east-1'),
+#       'log_group': 'django-app-logs',
+#       'stream_name': '{machine_name}-{strftime:%Y-%m-%d}',
+#       'formatter': 'verbose',
+#   }
+# And add 'cloudwatch' to each logger's handlers list.
+#
+# Prometheus Integration:
+# For metrics collection with Prometheus, install django-prometheus:
+#   pip install django-prometheus
+# Add to INSTALLED_APPS: 'django_prometheus'
+# Add to MIDDLEWARE (at the top): 'django_prometheus.middleware.PrometheusBeforeMiddleware'
+# Add to MIDDLEWARE (at the bottom): 'django_prometheus.middleware.PrometheusAfterMiddleware'
+# Expose metrics endpoint in urls.py: path('metrics', include('django_prometheus.urls'))
+#
+# Structured JSON Logging:
+# For production-grade structured logging, install python-json-logger:
+#   pip install python-json-logger
+# Update formatter to use JSON:
+#   'json': {
+#       'class': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+#       'format': '%(asctime)s %(name)s %(levelname)s %(message)s',
+#   }
+# This makes logs easily parseable by log aggregation systems like ELK, Splunk, or DataDog.
