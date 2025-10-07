@@ -205,11 +205,14 @@ class PromptCreationTests(APITestCase):
         response1 = self.client.post('/prompts/', {
             'prompt_text': 'Hello world'
         })
+        self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
+        
+        # Wait for throttle to reset, as throttling isn't a requisite for testing
+        time.sleep(1.1)
+        
         response2 = self.client.post('/prompts/', {
             'prompt_text': 'What is Python?'
         })
-        
-        self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response2.status_code, status.HTTP_201_CREATED)
         self.assertNotEqual(
             response1.data['response_text'],
