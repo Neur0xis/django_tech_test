@@ -11,3 +11,4 @@ class PromptSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'prompt_text', 'response_text', 'created_at']
         read_only_fields = ['id', 'user', 'created_at']
 
+
