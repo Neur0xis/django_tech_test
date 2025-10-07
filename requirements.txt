@@ -4,5 +4,6 @@ psycopg2-binary
 djangorestframework-simplejwt
 faiss-cpu
 django-cors-headers
-channels
+channels==4.1.0
+daphne==4.1.0
 pytest-django

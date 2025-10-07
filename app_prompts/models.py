@@ -7,6 +7,7 @@ class Prompt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='prompts')
     prompt_text = models.TextField()
     response_text = models.TextField()
+    embedding = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
