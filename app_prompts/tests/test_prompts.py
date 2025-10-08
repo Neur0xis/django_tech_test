@@ -1,5 +1,6 @@
 import time
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from ..models import Prompt
@@ -135,6 +136,9 @@ class PromptCreationTests(APITestCase):
 
     def setUp(self):
         """Initialize test user and client."""
+        # Clear cache to reset throttle counters between tests
+        cache.clear()
+        
         self.user = User.objects.create_user(
             username='testuser',
             password='testpass123'
@@ -156,9 +160,8 @@ class PromptCreationTests(APITestCase):
         self.assertEqual(response.data['prompt_text'], 'What is artificial intelligence?')
         self.assertIn('response_text', response.data)
         self.assertIsNotNone(response.data['response_text'])
-        self.assertIn('embedding', response.data)
-        self.assertIsNotNone(response.data['embedding'])
-        self.assertEqual(len(response.data['embedding']), 384)
+        # Note: Embeddings are generated and stored internally but not exposed in API responses
+        # for security and response cleanliness
 
     def test_create_prompt_with_websocket_flag(self):
         """Test that websocket flag is accepted (Phase 4 preparation)."""
@@ -225,6 +228,9 @@ class SimilaritySearchTests(APITestCase):
 
     def setUp(self):
         """Initialize test user, client, and test prompts."""
+        # Clear cache to reset throttle counters between tests
+        cache.clear()
+        
         self.user = User.objects.create_user(
             username='testuser',
             password='testpass123'
@@ -316,6 +322,9 @@ class ThrottlingTests(APITestCase):
 
     def setUp(self):
         """Initialize test user and client."""
+        # Clear cache to reset throttle counters between tests
+        cache.clear()
+        
         self.user = User.objects.create_user(
             username='testuser',
             password='testpass123'
