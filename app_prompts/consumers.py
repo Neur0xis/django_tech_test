@@ -20,7 +20,19 @@ class PromptConsumer(AsyncWebsocketConsumer):
         Handle WebSocket connection.
         Join user-specific group and send confirmation message.
         """
-        self.username = self.scope['url_route']['kwargs']['username']
+        # Safely retrieve username parameter
+        self.username = self.scope['url_route']['kwargs'].get('username')
+        
+        # Validate username parameter
+        if not self.username:
+            logger.warning("WebSocket connection rejected: missing username parameter")
+            await self.accept()
+            await self.send(json.dumps({
+                "error": "Missing 'username' parameter. Use ws://host/ws/prompts/<username>/"
+            }))
+            await self.close(code=4000)
+            return
+        
         self.room_group_name = f"user_{self.username}"
         
         # Join room group
@@ -34,9 +46,7 @@ class PromptConsumer(AsyncWebsocketConsumer):
         
         # Send connection confirmation
         await self.send(json.dumps({
-            "type": "connection_established",
-            "message": f"WebSocket connected for user {self.username}",
-            "timestamp": datetime.utcnow().isoformat()
+            "message": f"Connected to WebSocket room '{self.username}'."
         }))
         
         logger.info(f"WebSocket connected: user={self.username}, channel={self.channel_name}")
@@ -57,11 +67,32 @@ class PromptConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         """
         Handle messages received from WebSocket client.
-        Echo back the data for testing purposes.
+        Supports ping/pong for connectivity testing and echo for general testing.
         """
+        # Ignore empty or whitespace-only messages
+        if not text_data or not text_data.strip():
+            return
+        
         try:
             data = json.loads(text_data)
             logger.info(f"WebSocket received from user={self.username}: {data}")
+            
+            # Validate that the message has a 'type' field
+            if 'type' not in data:
+                await self.send(json.dumps({
+                    "type": "error",
+                    "message": "Missing 'type' field",
+                    "timestamp": datetime.utcnow().isoformat()
+                }))
+                return
+            
+            # Handle ping message for connectivity testing
+            if data['type'] == 'ping':
+                await self.send(json.dumps({
+                    "type": "pong",
+                    "timestamp": datetime.utcnow().isoformat()
+                }))
+                return
             
             # Echo the received data back to the client
             await self.send(json.dumps({
@@ -94,3 +125,21 @@ class PromptConsumer(AsyncWebsocketConsumer):
         
         logger.info(f"Sent prompt response to user={self.username}, prompt_id={event['data'].get('id')}")
 
+
+class InvalidConsumer(AsyncWebsocketConsumer):
+    """
+    Fallback WebSocket consumer for handling invalid or unmatched routes.
+    Provides a clear error message and closes gracefully.
+    """
+
+    async def connect(self):
+        """
+        Handle connection to invalid WebSocket endpoint.
+        Send error message and close with code 4001.
+        """
+        logger.warning("WebSocket connection rejected: invalid endpoint")
+        await self.accept()
+        await self.send(json.dumps({
+            "error": "Invalid WebSocket endpoint. Use /ws/prompts/<username>/"
+        }))
+        await self.close(code=4001)

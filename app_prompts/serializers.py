@@ -32,6 +32,15 @@ class PromptCreateSerializer(serializers.Serializer):
         return value
 
 
+class PromptPublicSerializer(serializers.ModelSerializer):
+    """Public serializer for Prompt model - excludes embedding field."""
+    user = serializers.ReadOnlyField(source='user.username')
+
+    class Meta:
+        model = Prompt
+        exclude = ['embedding']
+
+
 class SimilarPromptSerializer(serializers.ModelSerializer):
     """Serializer for similar prompts with similarity score."""
     user = serializers.ReadOnlyField(source='user.username')

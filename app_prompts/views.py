@@ -7,7 +7,7 @@ from rest_framework.throttling import UserRateThrottle
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from .models import Prompt
-from .serializers import PromptSerializer, PromptCreateSerializer, SimilarPromptSerializer
+from .serializers import PromptSerializer, PromptCreateSerializer, SimilarPromptSerializer, PromptPublicSerializer
 from . import services
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ class PromptViewSet(viewsets.ModelViewSet):
         """Return appropriate serializer based on action."""
         if self.action == 'create':
             return PromptCreateSerializer
-        return PromptSerializer
+        return PromptPublicSerializer
 
     def get_throttles(self):
         """Apply custom throttle only for create action."""
@@ -76,7 +76,7 @@ class PromptViewSet(viewsets.ModelViewSet):
         logger.info(f"Created prompt ID={prompt.id} for user={request.user.username}")
 
         # Prepare response data
-        response_serializer = PromptSerializer(prompt)
+        response_serializer = PromptPublicSerializer(prompt)
         response_data = response_serializer.data
 
         # Send via WebSocket if requested
